@@ -13,29 +13,107 @@ from kivy.metrics import dp
 from kivy.clock import Clock
 from kivy.properties import ObjectProperty, StringProperty
 from datetime import datetime, timedelta
-import re
+import data
 
 
 class ProjectDialog(MDBoxLayout):
     """Dialog for adding or editing a project."""
 
-    project_id = ObjectProperty(None)
-
     def __init__(self, project_data=None, **kwargs):
         super().__init__(**kwargs)
-        # If project_data is provided, we're editing an existing project
+        self.orientation = "vertical"
+        self.spacing = dp(10)
+        self.padding = dp(20)
+        self.size_hint_y = None
+        self.height = dp(360)
+
+        # Project ID (hidden)
+        self.project_id = None
         if project_data:
             self.project_id = project_data[0]
-            self.ids.project_name.text = project_data[1]
-            self.ids.project_budget.text = project_data[2].replace("$", "").replace(",", "")
-            self.ids.project_spending.text = project_data[3].replace("$", "").replace(",", "")
-            self.ids.project_budget_end_date.text = project_data[4]
-            self.ids.project_est_end_date.text = project_data[5]
+
+        # Project Name
+        self.add_widget(MDLabel(text="Project Name:"))
+        self.project_name = MDTextField()
+        self.add_widget(self.project_name)
+
+        # Project Budget
+        self.add_widget(MDLabel(text="Budget:"))
+        self.project_budget = MDTextField(hint_text="Enter amount (without $ or ,)")
+        self.add_widget(self.project_budget)
+
+        # Project Spending
+        self.add_widget(MDLabel(text="Current Spending:"))
+        self.project_spending = MDTextField(hint_text="Enter amount (without $ or ,)")
+        self.add_widget(self.project_spending)
+
+        # Project Budget End Date
+        self.add_widget(MDLabel(text="Budget End Date:"))
+        self.project_budget_end_date = MDTextField(hint_text="YYYY-MM-DD")
+        self.add_widget(self.project_budget_end_date)
+
+        # Project Estimated End Date
+        self.add_widget(MDLabel(text="Estimated End Date:"))
+        self.project_est_end_date = MDTextField(hint_text="YYYY-MM-DD")
+        self.add_widget(self.project_est_end_date)
+
+        # If editing, fill in existing data
+        if project_data:
+            self.project_name.text = project_data[1]
+            self.project_budget.text = project_data[2].replace("$", "").replace(",", "")
+            self.project_spending.text = project_data[3].replace("$", "").replace(",", "")
+            self.project_budget_end_date.text = project_data[4]
+            self.project_est_end_date.text = project_data[5]
+
+    # Property to access the widgets by id
+    @property
+    def ids(self):
+        return {
+            'project_name': self.project_name,
+            'project_budget': self.project_budget,
+            'project_spending': self.project_spending,
+            'project_budget_end_date': self.project_budget_end_date,
+            'project_est_end_date': self.project_est_end_date
+        }
 
 
 class FilterDialog(MDBoxLayout):
     """Dialog for filtering projects."""
-    pass
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.orientation = "vertical"
+        self.spacing = dp(10)
+        self.padding = dp(20)
+        self.size_hint_y = None
+        self.height = dp(200)
+
+        # Filter by Name
+        self.add_widget(MDLabel(text="Project Name Contains:"))
+        self.filter_name = MDTextField()
+        self.add_widget(self.filter_name)
+
+        # Filter by Budget Range
+        budget_range = MDBoxLayout(orientation="horizontal", spacing=dp(10))
+
+        self.add_widget(MDLabel(text="Budget Range:"))
+
+        self.filter_budget_min = MDTextField(hint_text="Min")
+        budget_range.add_widget(self.filter_budget_min)
+
+        self.filter_budget_max = MDTextField(hint_text="Max")
+        budget_range.add_widget(self.filter_budget_max)
+
+        self.add_widget(budget_range)
+
+    # Property to access the widgets by id
+    @property
+    def ids(self):
+        return {
+            'filter_name': self.filter_name,
+            'filter_budget_min': self.filter_budget_min,
+            'filter_budget_max': self.filter_budget_max
+        }
 
 
 class ProjectsTableApp(MDApp):
@@ -56,7 +134,7 @@ class ProjectsTableApp(MDApp):
 
         # Create toolbar
         self.toolbar = MDTopAppBar(
-            title="Project Management",
+            title="Shepherd",
             elevation=10,
             pos_hint={"top": 1},
             right_action_items=[
@@ -68,40 +146,7 @@ class ProjectsTableApp(MDApp):
         )
 
         # Sample data for projects - now with ID field
-        self.projects_data = [
-            (
-                1,
-                "Project Alpha",
-                "$120,000",
-                "$85,000",
-                "2025-06-30",
-                "2025-07-15"
-            ),
-            (
-                2,
-                "Project Beta",
-                "$75,000",
-                "$40,000",
-                "2025-05-15",
-                "2025-05-10"
-            ),
-            (
-                3,
-                "Project Gamma",
-                "$250,000",
-                "$125,000",
-                "2025-12-31",
-                "2026-01-20"
-            ),
-            (
-                4,
-                "Project Delta",
-                "$60,000",
-                "$58,000",
-                "2025-04-30",
-                "2025-05-05"
-            ),
-        ]
+        self.projects_data = data.get_projects()
 
         # Create data table
         self.table = MDDataTable(
@@ -109,7 +154,7 @@ class ProjectsTableApp(MDApp):
             use_pagination=True,
             check=True,
             column_data=[
-                ("ID", dp(10)),
+                ("ID", dp(18)),
                 ("Project Name", dp(30)),
                 ("Budget", dp(20)),
                 ("Spending", dp(20)),
@@ -302,20 +347,20 @@ class ProjectsTableApp(MDApp):
 
             # Format currency values
             try:
-                budget = float(content.ids.project_budget.text)
+                budget = float(content.ids["project_budget"].text)
                 budget_str = f"${budget:,.0f}"
 
-                spending = float(content.ids.project_spending.text)
+                spending = float(content.ids["project_spending"].text)
                 spending_str = f"${spending:,.0f}"
 
                 # Create updated project tuple
                 updated_project = (
                     project_id,
-                    content.ids.project_name.text,
+                    content.ids["project_name"].text,
                     budget_str,
                     spending_str,
-                    content.ids.project_budget_end_date.text,
-                    content.ids.project_est_end_date.text
+                    content.ids["project_budget_end_date"].text,
+                    content.ids["project_est_end_date"].text
                 )
 
                 # Update projects data
@@ -410,106 +455,6 @@ class ProjectsTableApp(MDApp):
             self.theme_cls.theme_style = "Dark"
         else:
             self.theme_cls.theme_style = "Light"
-
-
-class ProjectDialog(MDBoxLayout):
-    """Dialog for adding or editing a project."""
-
-    def __init__(self, project_data=None, **kwargs):
-        super().__init__(**kwargs)
-        self.orientation = "vertical"
-        self.spacing = dp(10)
-        self.padding = dp(20)
-        self.size_hint_y = None
-        self.height = dp(360)
-
-        # Project ID (hidden)
-        self.project_id = None
-        if project_data:
-            self.project_id = project_data[0]
-
-        # Project Name
-        self.add_widget(MDLabel(text="Project Name:"))
-        self.project_name = MDTextField()
-        self.add_widget(self.project_name)
-
-        # Project Budget
-        self.add_widget(MDLabel(text="Budget:"))
-        self.project_budget = MDTextField(hint_text="Enter amount (without $ or ,)")
-        self.add_widget(self.project_budget)
-
-        # Project Spending
-        self.add_widget(MDLabel(text="Current Spending:"))
-        self.project_spending = MDTextField(hint_text="Enter amount (without $ or ,)")
-        self.add_widget(self.project_spending)
-
-        # Project Budget End Date
-        self.add_widget(MDLabel(text="Budget End Date:"))
-        self.project_budget_end_date = MDTextField(hint_text="YYYY-MM-DD")
-        self.add_widget(self.project_budget_end_date)
-
-        # Project Estimated End Date
-        self.add_widget(MDLabel(text="Estimated End Date:"))
-        self.project_est_end_date = MDTextField(hint_text="YYYY-MM-DD")
-        self.add_widget(self.project_est_end_date)
-
-        # If editing, fill in existing data
-        if project_data:
-            self.project_name.text = project_data[1]
-            self.project_budget.text = project_data[2].replace("$", "").replace(",", "")
-            self.project_spending.text = project_data[3].replace("$", "").replace(",", "")
-            self.project_budget_end_date.text = project_data[4]
-            self.project_est_end_date.text = project_data[5]
-
-    # Property to access the widgets by id
-    @property
-    def ids(self):
-        return {
-            'project_name': self.project_name,
-            'project_budget': self.project_budget,
-            'project_spending': self.project_spending,
-            'project_budget_end_date': self.project_budget_end_date,
-            'project_est_end_date': self.project_est_end_date
-        }
-
-
-class FilterDialog(MDBoxLayout):
-    """Dialog for filtering projects."""
-
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self.orientation = "vertical"
-        self.spacing = dp(10)
-        self.padding = dp(20)
-        self.size_hint_y = None
-        self.height = dp(200)
-
-        # Filter by Name
-        self.add_widget(MDLabel(text="Project Name Contains:"))
-        self.filter_name = MDTextField()
-        self.add_widget(self.filter_name)
-
-        # Filter by Budget Range
-        budget_range = MDBoxLayout(orientation="horizontal", spacing=dp(10))
-
-        self.add_widget(MDLabel(text="Budget Range:"))
-
-        self.filter_budget_min = MDTextField(hint_text="Min")
-        budget_range.add_widget(self.filter_budget_min)
-
-        self.filter_budget_max = MDTextField(hint_text="Max")
-        budget_range.add_widget(self.filter_budget_max)
-
-        self.add_widget(budget_range)
-
-    # Property to access the widgets by id
-    @property
-    def ids(self):
-        return {
-            'filter_name': self.filter_name,
-            'filter_budget_min': self.filter_budget_min,
-            'filter_budget_max': self.filter_budget_max
-        }
 
 
 if __name__ == "__main__":
