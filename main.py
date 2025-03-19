@@ -311,20 +311,20 @@ class ProjectsTableApp(MDApp):
 
             # Format currency values
             try:
-                budget = float(content.ids.project_budget.text)
+                budget = float(content.ids["project_budget"].text)
                 budget_str = f"${budget:,.0f}"
 
-                spending = float(content.ids.project_spending.text)
+                spending = float(content.ids["project_spending"].text)
                 spending_str = f"${spending:,.0f}"
 
                 # Create new project tuple
                 new_project = (
                     new_id,
-                    content.ids.project_name.text,
+                    content.ids["project_name"].text,
                     budget_str,
                     spending_str,
-                    content.ids.project_budget_end_date.text,
-                    content.ids.project_est_end_date.text
+                    content.ids["project_budget_end_date"].text,
+                    content.ids["project_est_end_date"].text
                 )
 
                 # Add to projects data
