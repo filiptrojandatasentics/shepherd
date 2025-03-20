@@ -1,0 +1,147 @@
+#:kivy 2.1.0
+#:import dp kivy.metrics.dp
+
+<ProjectsTableScreen>:
+    name: "projects_table_screen"
+
+    MDBoxLayout:
+        orientation: "vertical"
+
+        MDTopAppBar:
+            title: "Project Management"
+            elevation: 10
+            right_action_items: [["magnify", lambda x: app.show_filter_dialog(), "Filter"], ["plus", lambda x: app.show_add_project_dialog(), "Add Project"], ["refresh", lambda x: app.refresh_table(), "Refresh"], ["theme-light-dark", lambda x: app.toggle_theme(), "Toggle Theme"]]
+
+        MDDataTable:
+            id: projects_table
+            size_hint: 1, 0.9
+            use_pagination: True
+            check: True
+            sorted_on: "Budget"
+            sorted_order: "ASC"
+
+        MDBoxLayout:
+            orientation: "horizontal"
+            size_hint: 1, 0.1
+            padding: dp(10)
+            spacing: dp(10)
+
+            MDLabel:
+                size_hint_x: 0.7
+
+            MDRaisedButton:
+                id: edit_button
+                text: "Edit"
+                disabled: True
+                on_release: app.edit_selected_project()
+
+            MDRaisedButton:
+                id: delete_button
+                text: "Delete"
+                disabled: True
+                on_release: app.delete_selected_projects()
+
+
+<ProjectDialog>:
+    orientation: "vertical"
+    spacing: dp(10)
+    padding: dp(20)
+    size_hint_y: None
+    height: dp(360)
+
+    MDLabel:
+        text: "Project Name:"
+        size_hint_y: None
+        height: dp(20)
+
+    MDTextField:
+        id: project_name
+        hint_text: "Enter project name"
+        size_hint_y: None
+        height: dp(30)
+
+    MDLabel:
+        text: "Budget:"
+        size_hint_y: None
+        height: dp(20)
+
+    MDTextField:
+        id: project_budget
+        hint_text: "Enter amount (without $ or ,)"
+        size_hint_y: None
+        height: dp(30)
+        input_filter: "float"
+
+    MDLabel:
+        text: "Current Spending:"
+        size_hint_y: None
+        height: dp(20)
+
+    MDTextField:
+        id: project_spending
+        hint_text: "Enter amount (without $ or ,)"
+        size_hint_y: None
+        height: dp(30)
+        input_filter: "float"
+
+    MDLabel:
+        text: "Budget End Date:"
+        size_hint_y: None
+        height: dp(20)
+
+    MDTextField:
+        id: project_budget_end_date
+        hint_text: "YYYY-MM-DD"
+        size_hint_y: None
+        height: dp(30)
+
+    MDLabel:
+        text: "Estimated End Date:"
+        size_hint_y: None
+        height: dp(20)
+
+    MDTextField:
+        id: project_est_end_date
+        hint_text: "YYYY-MM-DD"
+        size_hint_y: None
+        height: dp(30)
+
+
+<FilterDialog>:
+    orientation: "vertical"
+    spacing: dp(10)
+    padding: dp(20)
+    size_hint_y: None
+    height: dp(200)
+
+    MDLabel:
+        text: "Project Name Contains:"
+        size_hint_y: None
+        height: dp(20)
+
+    MDTextField:
+        id: filter_name
+        hint_text: "Enter search term"
+        size_hint_y: None
+        height: dp(30)
+
+    MDLabel:
+        text: "Budget Range:"
+        size_hint_y: None
+        height: dp(20)
+
+    MDBoxLayout:
+        orientation: "horizontal"
+        spacing: dp(10)
+        size_hint_y: None
+        height: dp(30)
+
+        MDTextField:
+            id: filter_budget_min
+            hint_text: "Min"
+            input_filter: "float"
+
+        MDTextField:
+            id: filter_budget_max
+            hint_text: "Max"
+            input_filter: "float"
