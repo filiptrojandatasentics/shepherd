@@ -392,10 +392,16 @@ class ProjectsTableApp(MDApp):
         if checked_rows:
             # Sort in reverse order to avoid index issues when deleting
             for row_index in sorted(checked_rows, reverse=True):
-                project_id = self.projects_data[row_index][0]
+                project_id = row_index[0]
 
                 # Remove from projects data
-                self.projects_data = [p for p in self.projects_data if p[0] != project_id]
+                self.projects_data = [p for p in self.projects_data if str(p[0]) != project_id]
+
+            # Uncheck rows
+            for i in range(0, len(self.table.table_data.recycle_data)):
+                if self.table.table_data.cell_row_obj_dict.get(i, None):
+                    cell_row_obj = self.table.table_data.cell_row_obj_dict[i]
+                    cell_row_obj.ids.check.state = "normal"
 
             # Update table
             self.refresh_table()
